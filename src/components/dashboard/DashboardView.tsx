@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { FadeIn } from "@/components/ui/fade-in";
 import { toPlainText } from "@/components/chat/types";
 import type { InsightsData } from "@/types";
 import { cn } from "@/lib/utils";
@@ -59,8 +60,9 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
         id="main-content"
         className="mx-auto max-w-4xl space-y-6 px-4 py-8"
       >
-        <section aria-labelledby="mood-heading">
-          <Card>
+        <FadeIn>
+          <section aria-labelledby="mood-heading">
+            <Card>
             <CardHeader>
               <CardTitle id="mood-heading">How are you feeling?</CardTitle>
               <CardDescription>
@@ -72,8 +74,10 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
             </CardContent>
           </Card>
         </section>
+        </FadeIn>
 
         <div className="grid gap-6 md:grid-cols-2">
+          <FadeIn delay={0.05}>
           <section aria-labelledby="trend-heading">
             <Card className="h-full">
               <CardHeader>
@@ -88,7 +92,9 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
               </CardContent>
             </Card>
           </section>
+          </FadeIn>
 
+          <FadeIn delay={0.1}>
           <section aria-labelledby="stats-heading">
             <Card className="h-full">
               <CardHeader>
@@ -137,10 +143,12 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
               </CardContent>
             </Card>
           </section>
+          </FadeIn>
         </div>
 
         <Separator />
 
+        <FadeIn delay={0.15}>
         <section aria-labelledby="actions-heading">
           <h2 id="actions-heading" className="sr-only">
             Quick actions
@@ -174,6 +182,7 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
             </Link>
           </div>
         </section>
+        </FadeIn>
       </main>
     </div>
   );

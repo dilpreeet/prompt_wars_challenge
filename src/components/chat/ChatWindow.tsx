@@ -169,6 +169,7 @@ export function ChatWindow({ initialMessages = [] }: ChatWindowProps) {
         </form>
       </header>
 
+      <main id="main-content" className="flex min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-6"
@@ -249,6 +250,7 @@ export function ChatWindow({ initialMessages = [] }: ChatWindowProps) {
           </p>
         </form>
       </footer>
+      </main>
     </div>
   );
 }

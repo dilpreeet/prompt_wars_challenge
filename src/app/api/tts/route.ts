@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/api-guard";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isTtsConfigured, synthesizeSpeech } from "@/lib/tts";
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rateLimited = enforceRateLimit(user.id, "tts");
+  if (rateLimited) return rateLimited;
 
   try {
     const audio = await synthesizeSpeech(parsed.data.text);

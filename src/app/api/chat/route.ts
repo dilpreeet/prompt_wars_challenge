@@ -1,5 +1,6 @@
 import { buildSystemPrompt } from "@/lib/prompts";
 import { loadChatContext } from "@/lib/chat-context";
+import { enforceRateLimit } from "@/lib/api-guard";
 import { isGeminiConfigured, streamChatCompletion } from "@/lib/gemini";
 import {
   detectCrisis,
@@ -73,6 +74,9 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rateLimited = enforceRateLimit(user.id, "chat");
+  if (rateLimited) return rateLimited;
 
   const crisis = detectCrisis(message);
   const context = await loadChatContext(supabase, user.id);

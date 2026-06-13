@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { Check, Loader2 } from "lucide-react";
 import {
   MOOD_ENERGY_DEFAULT,
@@ -20,6 +20,7 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   async function logMood(moodId: MoodId) {
     setSelected(moodId);
@@ -48,6 +49,27 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
     }
   }
 
+  function handleRadioKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    let nextIndex = index;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (index + 1) % MOOD_OPTIONS.length;
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (index - 1 + MOOD_OPTIONS.length) % MOOD_OPTIONS.length;
+      event.preventDefault();
+    } else if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      void logMood(MOOD_OPTIONS[index]!.id);
+      return;
+    } else {
+      return;
+    }
+    optionRefs.current[nextIndex]?.focus();
+  }
+
   return (
     <div className="space-y-3">
       <div
@@ -55,16 +77,20 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
         aria-label="How are you feeling right now?"
         className="flex flex-wrap gap-2"
       >
-        {MOOD_OPTIONS.map((option) => {
+        {MOOD_OPTIONS.map((option, index) => {
           const isSelected = selected === option.id;
           return (
             <button
               key={option.id}
+              ref={(el) => {
+                optionRefs.current[index] = el;
+              }}
               type="button"
               role="radio"
               aria-checked={isSelected}
               disabled={status === "saving"}
               onClick={() => logMood(option.id)}
+              onKeyDown={(event) => handleRadioKeyDown(event, index)}
               className={cn(
                 "inline-flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl border px-3 py-2 text-sm transition-colors",
                 "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",

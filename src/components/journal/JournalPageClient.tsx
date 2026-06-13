@@ -39,7 +39,7 @@ export function JournalPageClient({ initialEntries }: JournalPageClientProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-8 px-4 py-8">
+      <main id="main-content" className="mx-auto max-w-2xl space-y-8 px-4 py-8">
         <JournalEditor onSaved={handleSaved} />
 
         {entries.length > 0 && (
