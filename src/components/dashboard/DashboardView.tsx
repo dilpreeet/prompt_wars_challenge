@@ -43,8 +43,10 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
             </div>
             <div>
               <h1 className="text-lg font-semibold">CalmCoach</h1>
-              {userEmail && (
+              {userEmail ? (
                 <p className="text-xs text-muted-foreground">{userEmail}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Guest session</p>
               )}
             </div>
           </div>

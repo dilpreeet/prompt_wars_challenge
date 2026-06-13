@@ -55,6 +55,12 @@ Chat and journal analysis require `GOOGLE_GENERATIVE_AI_API_KEY`. TTS is optiona
    ```
    {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
    ```
+5. **Authentication → Providers → Anonymous Sign-Ins** — **Enable** (for instant guest login without email)
+
+### Magic link vs guest
+
+- **Magic link** — you must use a **real email** and **click the link** in your inbox. Entering a random address still shows “link sent” (Supabase does this on purpose), but you won’t get in until you click the email.
+- **Continue as guest** — instant access, no email. Best for demos and quick testing.
 
 ### 4. Run locally
 

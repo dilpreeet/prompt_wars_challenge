@@ -84,9 +84,7 @@ create policy "own chat messages" on public.chat_messages
   with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- Auth note (magic link):
---   This app uses the token-hash confirmation flow. In the Supabase Dashboard
---   set Authentication -> URL Configuration -> Site URL to your deployment URL,
---   and ensure the "Magic Link" email template points to:
---     {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email
+-- Auth notes:
+--   Magic link: set Site URL + redirect to /auth/confirm (see README).
+--   Guest mode: enable Anonymous Sign-Ins under Authentication → Providers.
 -- ---------------------------------------------------------------------------
