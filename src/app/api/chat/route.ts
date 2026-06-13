@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, history } = parsed.data;
+  const { message } = parsed.data;
 
   const supabase = await createClient();
   const {
@@ -81,6 +81,19 @@ export async function POST(request: Request) {
 
   const rateLimited = enforceRateLimit(user.id, "chat");
   if (rateLimited) return rateLimited;
+
+  // Load history server-side — never trust client-provided turns.
+  const { data: historyRows } = await supabase
+    .from("chat_messages")
+    .select("role, content")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(20);
+
+  const history = (historyRows ?? []).map((r) => ({
+    role: r.role as "user" | "assistant",
+    content: r.content,
+  }));
 
   const crisis = detectCrisis(message);
   const context = await loadChatContext(supabase, user.id);

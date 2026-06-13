@@ -117,26 +117,29 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
         })}
       </div>
 
+      {/* Always-rendered live region so screen readers reliably announce state changes */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {status === "saving" ? "Saving your check-in…" :
+         status === "saved"  ? "Mood logged — great job checking in with yourself!" : ""}
+      </p>
+      <p role="alert" aria-live="assertive" className="sr-only">
+        {status === "error" ? "Could not save mood. Please try again." : ""}
+      </p>
+
       {status === "saving" && (
-        <p
-          className="flex items-center gap-2 text-sm text-muted-foreground"
-          role="status"
-        >
+        <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-hidden="true">
           <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
           Saving your check-in…
         </p>
       )}
       {status === "saved" && (
-        <p
-          className="flex items-center gap-2 text-sm font-medium text-emerald-600"
-          role="status"
-        >
+        <p className="flex items-center gap-2 text-sm font-medium text-emerald-600" aria-hidden="true">
           <Check className="size-3.5" aria-hidden="true" />
           Mood logged — great job checking in with yourself!
         </p>
       )}
       {status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
+        <p className="text-sm text-destructive" aria-hidden="true">
           Could not save mood. Please try again.
         </p>
       )}

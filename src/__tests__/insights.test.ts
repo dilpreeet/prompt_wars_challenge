@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateTriggers, aggregateEmotions } from "@/lib/insights";
+import { aggregateTriggers, aggregateEmotions, computeStressTrend } from "@/lib/insights";
 import type { JournalEntry } from "@/types";
 
 function makeEntry(stressTriggers: string[], emotions: string[]): JournalEntry {
@@ -128,5 +128,32 @@ describe("aggregateEmotions", () => {
     const entries = emotions.map((e) => makeEntry([], [e]));
     const result = aggregateEmotions(entries);
     expect(result.length).toBeLessThanOrEqual(6);
+  });
+});
+
+describe("computeStressTrend", () => {
+  it("returns 'insufficient' when fewer than 4 data points", () => {
+    expect(computeStressTrend([3, 4, 5])).toBe("insufficient");
+    expect(computeStressTrend([])).toBe("insufficient");
+    expect(computeStressTrend([null, null, null, null])).toBe("insufficient");
+  });
+
+  it("returns 'rising' when recent stress significantly higher than prior", () => {
+    // prior avg = 2, recent avg = 4.67 → delta > 0.4
+    expect(computeStressTrend([1, 2, 3, 4, 5, 5])).toBe("rising");
+  });
+
+  it("returns 'easing' when recent stress significantly lower than prior", () => {
+    // prior avg = 5, recent avg = 1.67 → delta < -0.4
+    expect(computeStressTrend([5, 5, 5, 1, 2, 2])).toBe("easing");
+  });
+
+  it("returns 'stable' when delta within ±0.4", () => {
+    expect(computeStressTrend([3, 3, 3, 3, 3, 3])).toBe("stable");
+  });
+
+  it("ignores null values when computing averages", () => {
+    // [null, 3, null, 3, null, 3] — only 3 non-null → insufficient
+    expect(computeStressTrend([null, 3, null, 3, null, 3])).toBe("insufficient");
   });
 });

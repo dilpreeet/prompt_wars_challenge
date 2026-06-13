@@ -10,7 +10,6 @@ describe("chatRequestSchema", () => {
   it("accepts a valid chat payload", () => {
     const result = chatRequestSchema.safeParse({
       message: "Hello CalmCoach",
-      history: [{ role: "user", content: "Hi" }],
     });
     expect(result.success).toBe(true);
   });

@@ -111,13 +111,7 @@ export function JournalEditor({ onSaved }: JournalEditorProps) {
         </Button>
       </form>
 
-      {crisis && savedEntry?.ai_analysis && (
-        <CrisisBanner
-          content={
-            "If you're going through a difficult time, please reach out for support. Tele-MANAS: 14416 | AASRA: 9820466726"
-          }
-        />
-      )}
+      {crisis && savedEntry?.ai_analysis && <CrisisBanner />}
 
       {status === "done" && savedEntry?.ai_analysis && (
         <AnalysisPanel analysis={savedEntry.ai_analysis} />
