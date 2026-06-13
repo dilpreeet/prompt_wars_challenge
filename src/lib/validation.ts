@@ -11,3 +11,9 @@ export const chatRequestSchema = z.object({
 });
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
+
+export const ttsRequestSchema = z.object({
+  text: z.string().trim().min(1, "Text cannot be empty").max(2000),
+});
+
+export type TtsRequest = z.infer<typeof ttsRequestSchema>;
