@@ -46,6 +46,26 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface MoodTrendPoint {
+  date: string;
+  mood: string;
+  energy: number | null;
+  stress: number | null;
+}
+
+export interface TriggerCount {
+  trigger: string;
+  count: number;
+}
+
+export interface InsightsData {
+  moodTrend: MoodTrendPoint[];
+  recurringTriggers: TriggerCount[];
+  averageMoodScore: number | null;
+  journalCount: number;
+  latestSuggestion: string | null;
+}
+
 /**
  * Minimal typed surface of the Supabase schema, usable as the generic for
  * `createClient<Database>()` so queries are type-checked against our tables.
