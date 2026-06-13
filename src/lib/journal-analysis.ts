@@ -63,29 +63,53 @@ export function getFallbackAnalysis(content: string): JournalAnalysis {
   ).length;
   const moodScore = Math.max(2, Math.min(8, 5 + posCount - negCount));
 
+  const trimmedTriggers = stressTriggers.slice(0, 5);
+
+  const triggerSuggestions: Record<string, string> = {
+    "sleep deprivation":
+      "Your brain consolidates memory during sleep — protecting rest is part of studying. Wind down 30 min before bed: no screens, dim lights, and write tomorrow's top 3 tasks so your mind can let go tonight.",
+    "family expectations":
+      "You are more than your rank. Write down one thing you did well today, no matter how small — this trains your brain to notice progress, not just gaps. Your consistent effort matters far more than a single result.",
+    "performance anxiety":
+      "Reframe the exam as a chance to show what you know, not a verdict on who you are. Try box breathing right now: inhale 4 counts, hold 4, exhale 4, hold 4. Repeat 4 times — it activates your parasympathetic system in under 2 minutes.",
+    "time management":
+      "Break today's remaining work into 3 focused 25-minute Pomodoro blocks with 5-minute breaks. Start with the single hardest topic first (when willpower is highest), then move to revision. One block at a time.",
+    "exam pressure":
+      "Zoom out: today's chapter is one small piece of a much larger journey. Name 3 things you have already mastered — your brain needs to see evidence of growth, not just distance still to go.",
+    "general stress":
+      "Take a 5-minute break with box breathing (inhale 4 counts, hold 4, exhale 4). Remember: showing up consistently matters more than perfection. You are making progress — one chapter, one day at a time.",
+  };
+
+  const primaryTrigger = trimmedTriggers[0] ?? "general stress";
+  const suggestion =
+    triggerSuggestions[primaryTrigger] ?? triggerSuggestions["general stress"]!;
+
   return {
-    stressTriggers: stressTriggers.slice(0, 5),
+    stressTriggers: trimmedTriggers,
     emotions: emotions.slice(0, 5),
     moodScore,
-    suggestion:
-      "Take a 5-minute break with box breathing (inhale 4 counts, hold 4, exhale 4). " +
-      "Remember: showing up consistently matters more than perfection. " +
-      "You are making progress — one chapter, one day at a time.",
+    suggestion,
   };
 }
 
-/** Runs Gemini structured analysis on a journal entry. */
+/** Runs Gemini structured analysis on a journal entry (8 s timeout). */
 export async function analyzeJournalEntry(
   content: string,
 ): Promise<JournalAnalysis> {
   const model = getModel(ANALYSIS_PROMPT);
 
-  const result = await model.generateContent({
+  const geminiCall = model.generateContent({
     contents: [{ role: "user", parts: [{ text: content }] }],
     generationConfig: {
       responseMimeType: "application/json",
     },
   });
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Gemini analysis timed out")), 8_000),
+  );
+
+  const result = await Promise.race([geminiCall, timeoutPromise]);
 
   const raw = result.response.text();
 

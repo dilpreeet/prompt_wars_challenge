@@ -3,6 +3,8 @@ export interface ChatUIMessage {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
+  /** Set when a crisis SSE event was received for this message; persists after streaming ends. */
+  isCrisis?: boolean;
 }
 
 export type ChatStreamEvent =

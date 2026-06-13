@@ -8,17 +8,28 @@ import { cn } from "@/lib/utils";
 interface VoiceButtonProps {
   text: string;
   className?: string;
+  /** When true the button auto-plays once — used after streaming completes. */
+  autoPlay?: boolean;
 }
 
-/** Reads assistant text aloud via /api/tts (ElevenLabs). */
-export function VoiceButton({ text, className }: VoiceButtonProps) {
-  const [status, setStatus] = useState<"idle" | "loading" | "playing" | "error">(
-    "idle",
-  );
+/**
+ * Reads assistant text aloud.
+ * Primary: ElevenLabs via /api/tts.
+ * Fallback: browser Web Speech API (SpeechSynthesis) when ElevenLabs is
+ * unavailable or returns an error — keeps TTS working in demo / no-key mode.
+ */
+export function VoiceButton({ text, className, autoPlay = false }: VoiceButtonProps) {
+  const [status, setStatus] = useState<"idle" | "loading" | "playing" | "error">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const usingBrowserTtsRef = useRef(false);
+  const didAutoPlayRef = useRef(false);
 
-  const cleanup = useCallback(() => {
+  const stopAll = useCallback(() => {
+    if (usingBrowserTtsRef.current) {
+      window.speechSynthesis.cancel();
+      usingBrowserTtsRef.current = false;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -29,16 +40,37 @@ export function VoiceButton({ text, className }: VoiceButtonProps) {
     }
   }, []);
 
-  useEffect(() => cleanup, [cleanup]);
+  useEffect(() => () => stopAll(), [stopAll]);
 
-  async function handleClick() {
+  const playBrowserTts = useCallback(() => {
+    if (!("speechSynthesis" in window)) {
+      setStatus("error");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.slice(0, 2000));
+    utterance.rate = 0.95;
+    utterance.onend = () => {
+      usingBrowserTtsRef.current = false;
+      setStatus("idle");
+    };
+    utterance.onerror = () => {
+      usingBrowserTtsRef.current = false;
+      setStatus("idle");
+    };
+    usingBrowserTtsRef.current = true;
+    window.speechSynthesis.speak(utterance);
+    setStatus("playing");
+  }, [text]);
+
+  const handleClick = useCallback(async () => {
     if (status === "playing") {
-      cleanup();
+      stopAll();
       setStatus("idle");
       return;
     }
 
-    cleanup();
+    stopAll();
     setStatus("loading");
 
     try {
@@ -49,7 +81,9 @@ export function VoiceButton({ text, className }: VoiceButtonProps) {
       });
 
       if (!response.ok) {
-        throw new Error("TTS request failed");
+        // ElevenLabs unavailable or not configured — silently use browser TTS.
+        playBrowserTts();
+        return;
       }
 
       const blob = await response.blob();
@@ -59,21 +93,34 @@ export function VoiceButton({ text, className }: VoiceButtonProps) {
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onended = () => {
-        cleanup();
+        stopAll();
         setStatus("idle");
       };
       audio.onerror = () => {
-        cleanup();
+        stopAll();
         setStatus("error");
       };
-
       await audio.play();
       setStatus("playing");
     } catch {
-      cleanup();
-      setStatus("error");
+      playBrowserTts();
     }
-  }
+  }, [status, text, stopAll, playBrowserTts]);
+
+  // Keep a stable ref to handleClick so the autoPlay effect below doesn't
+  // need handleClick in its dependency array (avoids retriggering on re-renders).
+  const handleClickRef = useRef(handleClick);
+  useEffect(() => {
+    handleClickRef.current = handleClick;
+  });
+
+  // Trigger playback exactly once when autoPlay becomes true.
+  useEffect(() => {
+    if (!autoPlay || didAutoPlayRef.current || !text.trim()) return;
+    didAutoPlayRef.current = true;
+    void handleClickRef.current();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlay]);
 
   const label =
     status === "playing"
@@ -89,7 +136,7 @@ export function VoiceButton({ text, className }: VoiceButtonProps) {
       type="button"
       variant="ghost"
       size="icon-sm"
-      onClick={handleClick}
+      onClick={() => void handleClick()}
       disabled={status === "loading" || !text.trim()}
       aria-label={label}
       title={label}

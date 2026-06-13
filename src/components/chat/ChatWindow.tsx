@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Loader2, Send, Sparkles } from "lucide-react";
+import { Bot, Loader2, Send } from "lucide-react";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import type { ChatStreamEvent, ChatUIMessage } from "@/components/chat/types";
 import { AppShell } from "@/components/layout/AppShell";
@@ -15,6 +15,15 @@ const STARTER_PROMPTS = [
   "I had a good study session and want to reflect",
   "I'm comparing myself to other aspirants",
 ] as const;
+
+const WELCOME_ID = "calmcoach-welcome";
+
+const WELCOME_MESSAGE: ChatUIMessage = {
+  id: WELCOME_ID,
+  role: "assistant",
+  content:
+    "Hi! I'm CalmCoach — your private, judgment-free companion for NEET, JEE, CAT, GATE, UPSC, and other high-stakes exams. Whether you're feeling overwhelmed, burnt out, or just need to think out loud, I'm here. What's on your mind today?",
+};
 
 interface ChatWindowProps {
   initialMessages?: ChatUIMessage[];
@@ -31,8 +40,15 @@ function parseSseChunk(raw: string): ChatStreamEvent | null {
   }
 }
 
+function initMessages(initial: ChatUIMessage[]): ChatUIMessage[] {
+  return initial.length > 0 ? initial : [WELCOME_MESSAGE];
+}
+
 export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatUIMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatUIMessage[]>(() =>
+    initMessages(initialMessages),
+  );
+  const [latestCompletedId, setLatestCompletedId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,18 +90,13 @@ export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps)
       isStreaming: true,
     };
 
-    const history = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-
     setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed, history }),
+        body: JSON.stringify({ message: trimmed }),
       });
 
       if (!response.ok) {
@@ -115,6 +126,11 @@ export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps)
 
           if (event.type === "crisis") {
             setActiveCrisis(event.content);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, isCrisis: true } : m,
+              ),
+            );
           } else if (event.type === "token") {
             setMessages((prev) =>
               prev.map((m) =>
@@ -134,6 +150,8 @@ export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps)
           m.id === assistantId ? { ...m, isStreaming: false } : m,
         ),
       );
+      // Signal VoiceButton to auto-play this response.
+      setLatestCompletedId(assistantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
@@ -184,22 +202,23 @@ export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps)
           aria-live="polite"
           aria-relevant="additions text"
         >
-          {messages.length === 0 && (
-            <div className="mx-auto max-w-lg space-y-6 pt-4 text-center">
-              <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Sparkles className="size-8" aria-hidden="true" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="font-heading text-xl font-semibold">
-                  How can I support you today?
-                </h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Share what&apos;s on your mind — exam pressure, burnout, or
-                  just needing someone to listen. This is a safe, judgment-free
-                  space.
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2">
+          <div className="mx-auto flex max-w-2xl flex-col gap-5">
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                crisisContent={
+                  message.role === "assistant" && message.isCrisis
+                    ? activeCrisis
+                    : null
+                }
+                autoPlay={message.id === latestCompletedId}
+              />
+            ))}
+
+            {/* Starter prompts — visible only before the user sends their first message */}
+            {!messages.some((m) => m.role === "user") && !isSending && (
+              <div className="mx-auto mt-2 flex w-full max-w-lg flex-wrap justify-center gap-2">
                 {STARTER_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
@@ -212,23 +231,7 @@ export function ChatWindow({ initialMessages = [], userEmail }: ChatWindowProps)
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          <div className="mx-auto flex max-w-2xl flex-col gap-5">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                crisisContent={
-                  message.role === "assistant" &&
-                  activeCrisis &&
-                  message.isStreaming
-                    ? activeCrisis
-                    : null
-                }
-              />
-            ))}
+            )}
           </div>
         </div>
 

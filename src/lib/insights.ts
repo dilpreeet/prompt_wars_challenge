@@ -4,6 +4,7 @@ import type {
   JournalAnalysis,
   JournalEntry,
   MoodLog,
+  StressTrend,
   TriggerCount,
 } from "@/types";
 
@@ -100,6 +101,8 @@ export async function getInsights(
     journals.find((j) => j.ai_analysis?.suggestion)?.ai_analysis?.suggestion ??
     null;
 
+  const stressTrend = computeStressTrend(moodTrend.map((p) => p.stress ?? null));
+
   return {
     moodTrend,
     recurringTriggers: aggregateTriggers(journals),
@@ -107,5 +110,28 @@ export async function getInsights(
     averageMoodScore,
     journalCount: journals.length,
     latestSuggestion,
+    stressTrend,
   };
+}
+
+function avg(nums: number[]): number {
+  return nums.reduce((s, v) => s + v, 0) / nums.length;
+}
+
+/**
+ * Compares the average stress of the most recent 3 logs vs the 3 before that.
+ * Returns "insufficient" when there are fewer than 4 data points.
+ */
+export function computeStressTrend(stressValues: (number | null)[]): StressTrend {
+  const scores = stressValues.filter((v): v is number => v !== null);
+  if (scores.length < 4) return "insufficient";
+
+  const recent = scores.slice(-3);
+  const prior  = scores.slice(-6, -3);
+  if (prior.length === 0) return "insufficient";
+
+  const delta = avg(recent) - avg(prior);
+  if (delta > 0.4) return "rising";
+  if (delta < -0.4) return "easing";
+  return "stable";
 }

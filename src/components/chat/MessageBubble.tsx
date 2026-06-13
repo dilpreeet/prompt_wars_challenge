@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 interface MessageBubbleProps {
   message: ChatUIMessage;
   crisisContent?: string | null;
+  autoPlay?: boolean;
 }
 
-export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
+export function MessageBubble({ message, crisisContent, autoPlay = false }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const displayText = toPlainText(message.content);
 
@@ -40,7 +41,7 @@ export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
           isUser ? "items-end" : "items-start",
         )}
       >
-        {!isUser && crisisContent && <CrisisBanner content={crisisContent} />}
+        {!isUser && crisisContent && <CrisisBanner />}
 
         <div
           className={cn(
@@ -54,7 +55,7 @@ export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
         </div>
 
         {!isUser && !message.isStreaming && displayText.trim() && (
-          <VoiceButton text={displayText} />
+          <VoiceButton text={displayText} autoPlay={autoPlay} />
         )}
       </div>
     </article>

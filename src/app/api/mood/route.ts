@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { enforceRateLimit } from "@/lib/api-guard";
 import { moodLogSchema } from "@/lib/validation";
 import type { MoodLog } from "@/types";
 
@@ -54,6 +55,9 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+
+  const rateLimited = enforceRateLimit(auth.user.id, "mood");
+  if (rateLimited) return rateLimited;
 
   const parsed = moodLogSchema.safeParse(body);
   if (!parsed.success) {

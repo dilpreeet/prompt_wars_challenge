@@ -58,6 +58,8 @@ export interface TriggerCount {
   count: number;
 }
 
+export type StressTrend = "rising" | "easing" | "stable" | "insufficient";
+
 export interface InsightsData {
   moodTrend: MoodTrendPoint[];
   recurringTriggers: TriggerCount[];
@@ -65,6 +67,7 @@ export interface InsightsData {
   averageMoodScore: number | null;
   journalCount: number;
   latestSuggestion: string | null;
+  stressTrend: StressTrend;
 }
 
 /**

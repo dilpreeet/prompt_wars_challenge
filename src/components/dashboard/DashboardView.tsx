@@ -8,6 +8,7 @@ import {
   Brain,
   MessageCircle,
   Sparkles,
+  TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -185,13 +186,20 @@ export function DashboardView({ insights, userEmail }: DashboardViewProps) {
           <FadeIn delay={0.12}>
             <StatCard
               label="Stress trend"
-              value={insights.moodTrend.length > 0 ? "Active" : "—"}
-              sub={
-                insights.moodTrend.length > 0
-                  ? `${insights.moodTrend.length} recent check-ins`
-                  : "Start logging today"
+              value={
+                insights.stressTrend === "rising"  ? "↑ Rising"  :
+                insights.stressTrend === "easing"  ? "↓ Easing"  :
+                insights.stressTrend === "stable"  ? "→ Stable"  :
+                insights.moodTrend.length > 0      ? "Tracking…" : "—"
               }
-              icon={TrendingUp}
+              sub={
+                insights.stressTrend === "insufficient" && insights.moodTrend.length > 0
+                  ? "Log 4+ check-ins to see trend"
+                  : insights.moodTrend.length > 0
+                    ? `Based on ${insights.moodTrend.length} check-ins`
+                    : "Start logging today"
+              }
+              icon={insights.stressTrend === "easing" ? TrendingDown : TrendingUp}
               accent="amber"
             />
           </FadeIn>
