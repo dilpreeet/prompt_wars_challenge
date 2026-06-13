@@ -61,10 +61,12 @@ export function JournalEditor({ onSaved }: JournalEditorProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="journal-content">What&apos;s on your mind?</Label>
+          <Label htmlFor="journal-content" className="text-sm font-medium">
+            What&apos;s on your mind?
+          </Label>
           <Textarea
             id="journal-content"
             value={content}
@@ -72,21 +74,33 @@ export function JournalEditor({ onSaved }: JournalEditorProps) {
             placeholder="Write freely about your day, study stress, wins, or worries…"
             rows={6}
             disabled={status === "saving"}
-            className="min-h-[140px] resize-y"
+            className="min-h-[160px] resize-y rounded-xl border-border/80 bg-muted/20 text-base leading-relaxed"
           />
+          <p className="text-xs text-muted-foreground">
+            {content.length > 0
+              ? `${content.length} characters`
+              : "There are no wrong answers here"}
+          </p>
         </div>
 
         {error && (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
             {error}
           </p>
         )}
 
-        <Button type="submit" disabled={status === "saving" || !content.trim()}>
+        <Button
+          type="submit"
+          disabled={status === "saving" || !content.trim()}
+          className="h-10 gap-2"
+        >
           {status === "saving" ? (
             <>
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              Analyzing…
+              Analyzing your entry…
             </>
           ) : (
             <>

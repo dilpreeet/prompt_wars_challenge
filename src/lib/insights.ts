@@ -7,7 +7,8 @@ import type {
   TriggerCount,
 } from "@/types";
 
-function aggregateTriggers(entries: JournalEntry[]): TriggerCount[] {
+/** Exported for unit-testing. */
+export function aggregateTriggers(entries: JournalEntry[]): TriggerCount[] {
   const counts = new Map<string, number>();
 
   for (const entry of entries) {
@@ -28,6 +29,30 @@ function aggregateTriggers(entries: JournalEntry[]): TriggerCount[] {
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
+}
+
+/** Aggregates emotion frequencies across journal entries. Exported for unit-testing. */
+export function aggregateEmotions(entries: JournalEntry[]): TriggerCount[] {
+  const counts = new Map<string, number>();
+
+  for (const entry of entries) {
+    const analysis = entry.ai_analysis as JournalAnalysis | null;
+    if (!analysis?.emotions) continue;
+
+    for (const emotion of analysis.emotions) {
+      const key = emotion.trim().toLowerCase();
+      if (!key) continue;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([trigger, count]) => ({
+      trigger: trigger.charAt(0).toUpperCase() + trigger.slice(1),
+      count,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
 }
 
 /** Aggregates mood trends and journal triggers for the dashboard. */
@@ -78,6 +103,7 @@ export async function getInsights(
   return {
     moodTrend,
     recurringTriggers: aggregateTriggers(journals),
+    recurringEmotions: aggregateEmotions(journals),
     averageMoodScore,
     journalCount: journals.length,
     latestSuggestion,

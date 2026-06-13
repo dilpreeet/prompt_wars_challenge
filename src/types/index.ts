@@ -61,6 +61,7 @@ export interface TriggerCount {
 export interface InsightsData {
   moodTrend: MoodTrendPoint[];
   recurringTriggers: TriggerCount[];
+  recurringEmotions: TriggerCount[];
   averageMoodScore: number | null;
   journalCount: number;
   latestSuggestion: string | null;

@@ -16,10 +16,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <main
-      id="main-content"
-      className="flex min-h-svh items-center justify-center bg-gradient-to-b from-background to-muted/40 px-4 py-12"
-    >
+    <main id="main-content" className="min-h-svh app-surface">
       <LoginPageClient />
     </main>
   );
