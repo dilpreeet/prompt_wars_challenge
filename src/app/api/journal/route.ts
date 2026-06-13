@@ -1,5 +1,5 @@
 import { analyzeJournalEntry } from "@/lib/journal-analysis";
-import { isGeminiConfigured } from "@/lib/gemini";
+import { formatGeminiError, isGeminiConfigured } from "@/lib/gemini";
 import { detectCrisis, formatHelplineMessage } from "@/lib/safety";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -92,8 +92,11 @@ export async function POST(request: Request) {
         suggestion: `${formatHelplineMessage()}\n\n${analysis.suggestion}`,
       };
     }
-  } catch {
-    return Response.json({ error: "Journal analysis failed" }, { status: 502 });
+  } catch (error) {
+    return Response.json(
+      { error: formatGeminiError(error) },
+      { status: 502 },
+    );
   }
 
   const { data, error } = await supabase

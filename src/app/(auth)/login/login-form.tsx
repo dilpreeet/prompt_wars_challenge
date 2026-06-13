@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2, Sparkles, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -18,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const linkError = searchParams.get("error");
 
@@ -27,23 +26,6 @@ function LoginForm() {
     "idle" | "sending" | "sent" | "guest" | "error"
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const [checkingSession, setCheckingSession] = useState(true);
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setCheckingSession(false);
-      return;
-    }
-
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        router.replace("/");
-      } else {
-        setCheckingSession(false);
-      }
-    });
-  }, [router]);
 
   async function handleGuestLogin() {
     if (!isSupabaseConfigured) {
@@ -55,20 +37,29 @@ function LoginForm() {
     setStatus("guest");
     setMessage(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInAnonymously();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInAnonymously();
 
-    if (error) {
+      if (error) {
+        setStatus("error");
+        setMessage(
+          error.message.includes("anonymous") ||
+            error.message.includes("Anonymous")
+            ? "Guest sign-in is disabled. In Supabase go to Authentication → Providers → Anonymous Sign-Ins and enable it."
+            : error.message,
+        );
+        return;
+      }
+
+      // Full navigation ensures auth cookies are picked up by the server
+      window.location.assign("/");
+    } catch {
       setStatus("error");
       setMessage(
-        error.message.includes("anonymous") || error.message.includes("Anonymous")
-          ? "Guest sign-in is disabled. In Supabase go to Authentication → Providers → Anonymous Sign-Ins and enable it."
-          : error.message,
+        "Could not reach Supabase. Check NEXT_PUBLIC_SUPABASE_URL and your internet connection.",
       );
-      return;
     }
-
-    router.replace("/");
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -99,17 +90,6 @@ function LoginForm() {
     }
 
     setStatus("sent");
-  }
-
-  if (checkingSession) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardContent className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Checking session…
-        </CardContent>
-      </Card>
-    );
   }
 
   return (
@@ -242,7 +222,15 @@ function LoginForm() {
 
 export function LoginPageClient() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md">
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Loading…
+          </CardContent>
+        </Card>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
