@@ -19,18 +19,15 @@ export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
 
   return (
     <article
-      className={cn(
-        "flex gap-3",
-        isUser ? "flex-row-reverse" : "flex-row",
-      )}
+      className={cn("flex gap-3", isUser ? "flex-row-reverse" : "flex-row")}
       aria-label={isUser ? "Your message" : "Assistant message"}
     >
       <div
         className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full",
+          "flex size-9 shrink-0 items-center justify-center rounded-xl shadow-sm",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground",
+            ? "bg-primary text-primary-foreground shadow-primary/20"
+            : "border border-border/60 bg-card text-primary",
         )}
         aria-hidden="true"
       >
@@ -39,7 +36,7 @@ export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
 
       <div
         className={cn(
-          "flex max-w-[85%] flex-col gap-2 sm:max-w-[75%]",
+          "flex max-w-[85%] flex-col gap-2 sm:max-w-[78%]",
           isUser ? "items-end" : "items-start",
         )}
       >
@@ -47,16 +44,13 @@ export function MessageBubble({ message, crisisContent }: MessageBubbleProps) {
 
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
+            "rounded-2xl px-4 py-3 text-sm leading-relaxed",
             isUser
-              ? "rounded-tr-sm bg-primary text-primary-foreground"
-              : "rounded-tl-sm border border-border bg-card text-card-foreground",
+              ? "rounded-tr-md bg-primary text-primary-foreground shadow-sm shadow-primary/15"
+              : "rounded-tl-md border border-border/60 bg-card text-card-foreground shadow-sm",
           )}
         >
-          <StreamingText
-            text={displayText}
-            isStreaming={message.isStreaming}
-          />
+          <StreamingText text={displayText} isStreaming={message.isStreaming} />
         </div>
 
         {!isUser && !message.isStreaming && displayText.trim() && (

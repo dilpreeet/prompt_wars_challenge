@@ -31,6 +31,9 @@ export default async function JournalPage() {
     .limit(20);
 
   return (
-    <JournalPageClient initialEntries={(rows ?? []) as JournalEntry[]} />
+    <JournalPageClient
+      initialEntries={(rows ?? []) as JournalEntry[]}
+      userEmail={user.email ?? undefined}
+    />
   );
 }

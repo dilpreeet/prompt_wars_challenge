@@ -1,7 +1,11 @@
 import { buildSystemPrompt } from "@/lib/prompts";
 import { loadChatContext } from "@/lib/chat-context";
 import { enforceRateLimit } from "@/lib/api-guard";
-import { isGeminiConfigured, streamChatCompletion } from "@/lib/gemini";
+import {
+  formatGeminiError,
+  isGeminiConfigured,
+  streamChatCompletion,
+} from "@/lib/gemini";
 import {
   detectCrisis,
   formatHelplineMessage,
@@ -137,9 +141,7 @@ export async function POST(request: Request) {
           });
         }
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Chat stream failed";
-        send({ type: "error", message });
+        send({ type: "error", message: formatGeminiError(error) });
       } finally {
         controller.close();
       }

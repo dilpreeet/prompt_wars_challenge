@@ -14,6 +14,14 @@ interface MoodSelectorProps {
   onLogged?: () => void;
 }
 
+const MOOD_COLORS: Record<MoodId, string> = {
+  great: "hover:border-emerald-300 hover:bg-emerald-50 data-[selected=true]:border-emerald-400 data-[selected=true]:bg-emerald-50 data-[selected=true]:text-emerald-800",
+  okay: "hover:border-sky-300 hover:bg-sky-50 data-[selected=true]:border-sky-400 data-[selected=true]:bg-sky-50 data-[selected=true]:text-sky-800",
+  meh: "hover:border-amber-300 hover:bg-amber-50 data-[selected=true]:border-amber-400 data-[selected=true]:bg-amber-50 data-[selected=true]:text-amber-800",
+  low: "hover:border-orange-300 hover:bg-orange-50 data-[selected=true]:border-orange-400 data-[selected=true]:bg-orange-50 data-[selected=true]:text-orange-800",
+  anxious: "hover:border-rose-300 hover:bg-rose-50 data-[selected=true]:border-rose-400 data-[selected=true]:bg-rose-50 data-[selected=true]:text-rose-800",
+};
+
 /** Keyboard-accessible mood picker that logs to /api/mood. */
 export function MoodSelector({ onLogged }: MoodSelectorProps) {
   const [selected, setSelected] = useState<MoodId | null>(null);
@@ -71,11 +79,11 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div
         role="radiogroup"
         aria-label="How are you feeling right now?"
-        className="flex flex-wrap gap-2"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5"
       >
         {MOOD_OPTIONS.map((option, index) => {
           const isSelected = selected === option.id;
@@ -88,40 +96,47 @@ export function MoodSelector({ onLogged }: MoodSelectorProps) {
               type="button"
               role="radio"
               aria-checked={isSelected}
+              aria-label={option.label}
+              data-selected={isSelected}
               disabled={status === "saving"}
               onClick={() => logMood(option.id)}
               onKeyDown={(event) => handleRadioKeyDown(event, index)}
               className={cn(
-                "inline-flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl border px-3 py-2 text-sm transition-colors",
+                "flex flex-col items-center gap-2 rounded-2xl border-2 border-border/60 bg-card px-4 py-5 text-sm transition-all",
                 "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                isSelected
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-background hover:bg-muted/60",
+                "disabled:opacity-60",
+                MOOD_COLORS[option.id],
               )}
             >
-              <span className="text-xl" aria-hidden="true">
+              <span className="text-3xl" aria-hidden="true">
                 {option.emoji}
               </span>
-              <span className="text-xs font-medium">{option.label}</span>
+              <span className="text-sm font-semibold">{option.label}</span>
             </button>
           );
         })}
       </div>
 
       {status === "saving" && (
-        <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
-          <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-          Saving mood…
+        <p
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          Saving your check-in…
         </p>
       )}
       {status === "saved" && (
-        <p className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400" role="status">
-          <Check className="size-3" aria-hidden="true" />
-          Mood logged — nice check-in!
+        <p
+          className="flex items-center gap-2 text-sm font-medium text-emerald-600"
+          role="status"
+        >
+          <Check className="size-3.5" aria-hidden="true" />
+          Mood logged — great job checking in with yourself!
         </p>
       )}
       {status === "error" && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           Could not save mood. Please try again.
         </p>
       )}

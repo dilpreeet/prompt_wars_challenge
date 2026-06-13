@@ -1,12 +1,6 @@
+import { Sparkles } from "lucide-react";
 import type { JournalAnalysis } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { toPlainText } from "@/components/chat/types";
 
 interface AnalysisPanelProps {
@@ -16,20 +10,28 @@ interface AnalysisPanelProps {
 /** Displays Gemini structured analysis for a journal entry. */
 export function AnalysisPanel({ analysis }: AnalysisPanelProps) {
   return (
-    <Card className="border-primary/20 bg-primary/5">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm">AI reflection</CardTitle>
-        <CardDescription>
-          Mood score: {analysis.moodScore}/10 — not a clinical assessment
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+    <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/5 to-transparent p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="size-4" aria-hidden="true" />
+        </div>
+        <div>
+          <p className="font-heading text-sm font-semibold">AI reflection</p>
+          <p className="text-xs text-muted-foreground">
+            Mood score: {analysis.moodScore}/10 — not a clinical assessment
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4 text-sm">
         {analysis.emotions.length > 0 && (
           <div>
-            <p className="mb-2 font-medium text-muted-foreground">Emotions</p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Emotions
+            </p>
+            <div className="flex flex-wrap gap-2">
               {analysis.emotions.map((emotion) => (
-                <Badge key={emotion} variant="secondary">
+                <Badge key={emotion} variant="secondary" className="rounded-lg">
                   {emotion}
                 </Badge>
               ))}
@@ -39,12 +41,12 @@ export function AnalysisPanel({ analysis }: AnalysisPanelProps) {
 
         {analysis.stressTriggers.length > 0 && (
           <div>
-            <p className="mb-2 font-medium text-muted-foreground">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Stress triggers
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {analysis.stressTriggers.map((trigger) => (
-                <Badge key={trigger} variant="outline">
+                <Badge key={trigger} variant="outline" className="rounded-lg">
                   {trigger}
                 </Badge>
               ))}
@@ -53,12 +55,14 @@ export function AnalysisPanel({ analysis }: AnalysisPanelProps) {
         )}
 
         <div>
-          <p className="mb-1 font-medium text-muted-foreground">Suggestion</p>
-          <p className="leading-relaxed whitespace-pre-wrap">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Suggestion
+          </p>
+          <p className="leading-relaxed whitespace-pre-wrap text-foreground/90">
             {toPlainText(analysis.suggestion)}
           </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

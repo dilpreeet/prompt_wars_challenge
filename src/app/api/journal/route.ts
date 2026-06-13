@@ -1,10 +1,11 @@
-import { analyzeJournalEntry } from "@/lib/journal-analysis";
+import { analyzeJournalEntry, getFallbackAnalysis } from "@/lib/journal-analysis";
 import { isGeminiConfigured } from "@/lib/gemini";
 import { detectCrisis, formatHelplineMessage } from "@/lib/safety";
+import { enforceRateLimit } from "@/lib/api-guard";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { journalCreateSchema } from "@/lib/validation";
-import type { JournalEntry } from "@/types";
+import type { JournalAnalysis, JournalEntry } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -46,17 +47,15 @@ export async function GET() {
   return Response.json({ entries: data as JournalEntry[] });
 }
 
-/** POST /api/journal — save entry and run Gemini analysis. */
+/** POST /api/journal — save entry and run Gemini analysis (falls back gracefully). */
 export async function POST(request: Request) {
-  if (!isGeminiConfigured) {
-    return Response.json(
-      { error: "Gemini API is not configured. Set GOOGLE_GENERATIVE_AI_API_KEY." },
-      { status: 503 },
-    );
-  }
-
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
+
+  const { supabase, user } = auth;
+
+  const rateLimited = enforceRateLimit(user.id, "journal");
+  if (rateLimited) return rateLimited;
 
   let body: unknown;
   try {
@@ -76,24 +75,34 @@ export async function POST(request: Request) {
   const { content, mood_score } = parsed.data;
   const crisis = detectCrisis(content);
 
-  const { supabase, user } = auth;
-
-  let ai_analysis = null;
+  let ai_analysis: JournalAnalysis;
   let moodScore = mood_score ?? null;
+  let usedFallback = false;
 
-  try {
-    const analysis = await analyzeJournalEntry(content);
-    ai_analysis = analysis;
-    moodScore = mood_score ?? analysis.moodScore;
-
-    if (crisis.isCrisis) {
-      ai_analysis = {
-        ...analysis,
-        suggestion: `${formatHelplineMessage()}\n\n${analysis.suggestion}`,
-      };
+  if (isGeminiConfigured) {
+    try {
+      const analysis = await analyzeJournalEntry(content);
+      ai_analysis = analysis;
+      moodScore = mood_score ?? analysis.moodScore;
+    } catch {
+      // Gemini unavailable or returned bad data — use keyword fallback so the
+      // entry is always saved with useful analysis rather than blocking the user.
+      ai_analysis = getFallbackAnalysis(content);
+      moodScore = mood_score ?? ai_analysis.moodScore;
+      usedFallback = true;
     }
-  } catch {
-    return Response.json({ error: "Journal analysis failed" }, { status: 502 });
+  } else {
+    // Demo / no-key mode: offline keyword analysis keeps the app fully usable.
+    ai_analysis = getFallbackAnalysis(content);
+    moodScore = mood_score ?? ai_analysis.moodScore;
+    usedFallback = true;
+  }
+
+  if (crisis.isCrisis) {
+    ai_analysis = {
+      ...ai_analysis,
+      suggestion: `${formatHelplineMessage()}\n\n${ai_analysis.suggestion}`,
+    };
   }
 
   const { data, error } = await supabase
@@ -111,5 +120,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Failed to save entry" }, { status: 500 });
   }
 
-  return Response.json({ entry: data as JournalEntry, crisis: crisis.isCrisis });
+  return Response.json({
+    entry: data as JournalEntry,
+    crisis: crisis.isCrisis,
+    analysisSource: usedFallback ? "fallback" : "gemini",
+  });
 }

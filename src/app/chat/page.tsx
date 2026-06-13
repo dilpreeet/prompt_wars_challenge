@@ -35,5 +35,5 @@ export default async function ChatPage() {
     content: row.content,
   }));
 
-  return <ChatWindow initialMessages={initialMessages} />;
+  return <ChatWindow initialMessages={initialMessages} userEmail={user.email ?? undefined} />;
 }
